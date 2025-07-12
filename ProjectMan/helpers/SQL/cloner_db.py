@@ -33,8 +33,6 @@ if DB_AVAILABLE:
 else:
     LOGGER(__name__).error("Database tidak tersedia saat memuat cloner_db.py.")
 
----
-
 ## Fungsi Manajemen Identitas
 
 def backup_identity(owner_id: int, first_name: str, last_name: str, bio: str):

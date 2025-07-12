@@ -53,7 +53,7 @@ if DB_AVAILABLE:
 else:
     LOGGER(__name__).error("Database not available when loading pmapprove_sql.py.")
 
----
+
 
 ## PM Whitelist and Request Management
 

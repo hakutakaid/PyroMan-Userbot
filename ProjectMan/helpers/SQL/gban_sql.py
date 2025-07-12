@@ -28,8 +28,6 @@ if DB_AVAILABLE:
 else:
     LOGGER(__name__).error("Database tidak tersedia saat memuat gban.py.")
 
----
-
 ## Fungsi Manajemen GBan
 
 def is_gbanned(sender: int | str) -> bool | None:

@@ -28,7 +28,7 @@ if DB_AVAILABLE:
 else:
     LOGGER(__name__).error("Database tidak tersedia saat memuat pmpermit.py.")
 
----
+
 
 ## Fungsi Manajemen Izin PM
 

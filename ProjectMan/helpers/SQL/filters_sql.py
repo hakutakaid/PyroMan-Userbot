@@ -32,8 +32,6 @@ if DB_AVAILABLE:
 else:
     LOGGER(__name__).error("Database tidak tersedia saat memuat filters_sql.py.")
 
----
-
 ## Fungsi Manajemen Filter
 
 def get_filter(chat_id: int | str, keyword: str) -> dict | None:

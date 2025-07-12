@@ -28,8 +28,6 @@ if DB_AVAILABLE:
 else:
     LOGGER(__name__).error("Database not available when loading gmute.py.")
 
----
-
 ## Global Mute Management Functions
 
 def is_gmuted(sender: int | str) -> bool | None:

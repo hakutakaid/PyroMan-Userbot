@@ -36,7 +36,7 @@ if DB_AVAILABLE:
 else:
     LOGGER(__name__).error("Database not available when loading pmpermit_sql.py.")
 
----
+
 
 ## Functions
 
