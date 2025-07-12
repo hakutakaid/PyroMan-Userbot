@@ -14,6 +14,7 @@ from ProjectMan.helpers.SQL.no_log_pms_sql import is_approved, approve, disappro
 
 from ProjectMan.helpers.SQL.__init__ import LOGGER # Pastikan ini tetap ada
 from ProjectMan.helpers.tools import get_arg
+from config import CMD_HANDLER as cmd
 
 from .help import add_command_help
 
