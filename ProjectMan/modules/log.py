@@ -4,6 +4,7 @@ import asyncio
 
 from pyrogram import Client, enums, filters
 from pyrogram.types import Message
+from pyrogram.errors import MessageNotModified
 
 # Hapus: from config import BOTLOG_CHATID
 # Impor fungsi baru dari globals.py untuk mendapatkan BOTLOG_CHATID
@@ -33,14 +34,12 @@ LOG_CHATS_ = LOG_CHATS()
     filters.private & filters.incoming & ~filters.service & ~filters.me & ~filters.bot
 )
 async def monito_p_m_s(client: Client, message: Message):
-    # Ambil BOTLOG_CHATID dari database
     current_botlog_chat_id = get_botlog_chat_id()
     
-    if current_botlog_chat_id is None: # Cek jika belum diatur di database
+    if current_botlog_chat_id is None:
         LOGGER(__name__).warning("BOTLOG_CHATID belum diatur di database, tidak dapat meneruskan log PM.")
         return
     
-    # gvarstatus akan mengembalikan string "true" / "false" atau None
     pmlog_status = gvarstatus("PMLOG")
     if pmlog_status == "false":
         return
@@ -49,21 +48,33 @@ async def monito_p_m_s(client: Client, message: Message):
         if LOG_CHATS_.RECENT_USER != message.chat.id:
             LOG_CHATS_.RECENT_USER = message.chat.id
             if LOG_CHATS_.NEWPM:
-                await LOG_CHATS_.NEWPM.edit(
-                    LOG_CHATS_.NEWPM.text.replace(
-                        "**💌 #NEW_MESSAGE**",
-                        f" • `{LOG_CHATS_.COUNT}` **Pesan**",
+                try:
+                    # Catch the specific error here
+                    await LOG_CHATS_.NEWPM.edit(
+                        LOG_CHATS_.NEWPM.text.replace(
+                            "**💌 #NEW_MESSAGE**",
+                            f" • `{LOG_CHATS_.COUNT}` **Pesan**",
+                        )
                     )
-                )
-                LOG_CHATS_.COUNT = 0
+                except MessageNotModified:
+                    # Log it if you want, or just pass silently
+                    LOGGER(__name__).debug("Message not modified, skipping edit.")
+                    pass
+                except Exception as e: # Catch other unexpected errors during edit
+                    LOGGER(__name__).error(f"Failed to edit previous PM log message: {e}")
+                    pass
+                finally: # Ensure count resets even if edit fails
+                    LOG_CHATS_.COUNT = 0
+            
+            # This part sends the initial message, should be outside the NEWPM check
             LOG_CHATS_.NEWPM = await client.send_message(
-                current_botlog_chat_id, # Gunakan BOTLOG_CHATID dari database
+                current_botlog_chat_id,
                 f"💌 <b>#MENERUSKAN #PESAN_BARU</b>\n<b> • Dari :</b> {message.from_user.mention}\n<b> • User ID :</b> <code>{message.from_user.id}</code>",
                 parse_mode=enums.ParseMode.HTML,
             )
         try:
             async for pmlog in client.search_messages(message.chat.id, limit=1):
-                await pmlog.forward(current_botlog_chat_id) # Gunakan BOTLOG_CHATID dari database
+                await pmlog.forward(current_botlog_chat_id)
             LOG_CHATS_.COUNT += 1
         except Exception as e:
             LOGGER(__name__).error(f"Failed to forward PM log: {e}")

@@ -81,8 +81,6 @@ def delgvar(key: str) -> bool:
             return False
     return False
 
-
-# Fungsi untuk mendapatkan BOTLOG_CHATID (tetap sama)
 def get_botlog_chat_id() -> int | str | None:
     """Retrieves BOTLOG_CHATID from global variables."""
     chat_id_str = gvarstatus("BOTLOG_CHATID")
@@ -93,12 +91,10 @@ def get_botlog_chat_id() -> int | str | None:
             return chat_id_str
     return None
 
-# Fungsi untuk mengatur BOTLOG_CHATID (tetap sama)
 def set_botlog_chat_id(chat_id: int | str):
     """Sets BOTLOG_CHATID in global variables."""
     addgvar("BOTLOG_CHATID", str(chat_id))
 
-# Call table creation function when the module is loaded
 if DB_AVAILABLE:
     create_gvar_table()
 else:

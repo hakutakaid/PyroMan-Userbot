@@ -22,7 +22,6 @@ from config import BOT_VER, CHANNEL, CMD_HANDLER as cmd, GROUP
 from ProjectMan import CMD_HELP, StartTime
 from ProjectMan.helpers.basic import edit_or_reply
 from ProjectMan.helpers.PyroHelpers import ReplyCheck
-# Mengimpor langsung fungsi gvarstatus dan addgvar dari modul globals yang sudah dimigrasi
 from ProjectMan.helpers.SQL.globals import gvarstatus, addgvar
 from ProjectMan.helpers.tools import convert_to_image
 from ProjectMan.utils import get_readable_time
@@ -32,9 +31,6 @@ from .help import add_command_help
 
 modules = CMD_HELP
 
-# Mengambil nilai dari database menggunakan fungsi gvarstatus
-# Fungsi gvarstatus sekarang akan mengembalikan string atau None jika tidak ditemukan
-# Kita perlu memastikan nilai default jika gvarstatus mengembalikan None
 alive_logo = gvarstatus("ALIVE_LOGO")
 if alive_logo is None:
     alive_logo = "https://telegra.ph/file/9dc4e335feaaf6a214818.jpg"
@@ -54,8 +50,7 @@ async def alive(client: Client, message: Message):
     await asyncio.sleep(2)
     send = client.send_video if alive_logo.endswith(".mp4") else client.send_photo
     uptime = await get_readable_time((time.time() - StartTime))
-    
-    # Gunakan f-string untuk penulisan yang lebih bersih dan aman
+
     man = (
         f"**[PyroMan-Userbot](https://github.com/mrismanaziz/PyroMan-Userbot) is Up and Running.**\n\n"
         f"**{alive_text}**\n\n"
@@ -78,13 +73,12 @@ async def alive(client: Client, message: Message):
                 reply_to_message_id=ReplyCheck(message),
             ),
         )
-    except Exception: # Tangani Exception yang lebih umum jika BaseException tidak relevan
+    except Exception:
         await xx.edit(man, disable_web_page_preview=True)
 
 
 @Client.on_message(filters.command("setalivelogo", cmd) & filters.me)
 async def setalivelogo(client: Client, message: Message):
-    # Tidak perlu lagi blok try...except AttributeError karena kita sudah mengimpor fungsi langsung
     Man = await edit_or_reply(message, "`Processing...`")
     link = None
     if len(message.command) > 1:
@@ -102,7 +96,7 @@ async def setalivelogo(client: Client, message: Message):
             await Man.edit(f"**ERROR:** `{exc}`")
             os.remove(m_d)
             return
-        finally: # Pastikan file lokal dihapus meskipun ada error lain
+        finally:
             if os.path.exists(m_d):
                 os.remove(m_d)
         
@@ -111,7 +105,7 @@ async def setalivelogo(client: Client, message: Message):
     if not link:
         return await Man.edit("**Mohon berikan link Telegraph atau balas ke foto/video/GIF!**")
         
-    addgvar("ALIVE_LOGO", link) # Menggunakan fungsi addgvar yang sudah dimigrasi
+    addgvar("ALIVE_LOGO", link)
     await Man.edit(
         f"**Berhasil Mengcustom ALIVE LOGO Menjadi** `{link}`",
         disable_web_page_preview=True,
@@ -121,7 +115,6 @@ async def setalivelogo(client: Client, message: Message):
 
 @Client.on_message(filters.command("setalivetext", cmd) & filters.me)
 async def setalivetext(client: Client, message: Message):
-    # Tidak perlu lagi blok try...except AttributeError
     text = None
     if len(message.command) > 1:
         text = message.text.split(None, 1)[1]
@@ -134,14 +127,13 @@ async def setalivetext(client: Client, message: Message):
     if not text:
         return await Man.edit("**Berikan Sebuah Text atau Reply ke text**")
     
-    addgvar("ALIVE_TEKS_CUSTOM", text) # Menggunakan fungsi addgvar yang sudah dimigrasi
+    addgvar("ALIVE_TEKS_CUSTOM", text)
     await Man.edit(f"**Berhasil Mengcustom ALIVE TEXT Menjadi** `{text}`")
     restart()
 
 
 @Client.on_message(filters.command("setemoji", cmd) & filters.me)
 async def setemoji(client: Client, message: Message):
-    # Tidak perlu lagi blok try...except AttributeError
     emoji_val = None
     if len(message.command) > 1:
         emoji_val = message.text.split(None, 1)[1]
@@ -151,7 +143,7 @@ async def setemoji(client: Client, message: Message):
     if not emoji_val:
         return await Man.edit("**Berikan Sebuah Emoji**")
     
-    addgvar("ALIVE_EMOJI", emoji_val) # Menggunakan fungsi addgvar yang sudah dimigrasi
+    addgvar("ALIVE_EMOJI", emoji_val)
     await Man.edit(f"**Berhasil Mengcustom EMOJI ALIVE Menjadi** {emoji_val}")
     restart()
 
