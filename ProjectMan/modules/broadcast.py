@@ -4,14 +4,10 @@ import asyncio
 
 from pyrogram import Client, enums, filters
 from pyrogram.types import Message
-
-# Assuming config.py also has CMD_HANDLER and DEVS, but we remove BLACKLIST_GCAST import
 from config import CMD_HANDLER as cmd
 from ProjectMan.helpers.adminHelpers import DEVS
 from ProjectMan.helpers.basic import edit_or_reply
 from ProjectMan.helpers.tools import get_arg
-
-# Import new DB functions
 from ProjectMan.helpers.SQL.gcast_blacklist_db import (
     add_chat_to_blacklist,
     remove_chat_from_blacklist,
@@ -19,8 +15,6 @@ from ProjectMan.helpers.SQL.gcast_blacklist_db import (
 )
 
 from .help import add_command_help
-
-# Remove the old blacklist loading logic from GitHub
 
 
 @Client.on_message(filters.command("gcast", cmd) & filters.me)

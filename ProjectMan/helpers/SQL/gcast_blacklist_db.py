@@ -4,10 +4,12 @@ import sqlite3
 
 from ProjectMan.helpers.SQL.__init__ import get_db_connection, DB_AVAILABLE, LOGGER
 
+DEFAULT_BLACKLIST_CHAT_IDS = [-1001473548283]
+
 def create_gcast_blacklist_table():
-    """Creates the 'gcast_blacklist' table if it doesn't already exist."""
+    """Membuat tabel 'gcast_blacklist' jika belum ada dan menambahkan ID default."""
     if not DB_AVAILABLE:
-        LOGGER(__name__).warning("Database not available, cannot create 'gcast_blacklist' table.")
+        LOGGER(__name__).warning("Database tidak tersedia, tidak dapat membuat tabel 'gcast_blacklist'.")
         return False
 
     conn, cursor = get_db_connection()
@@ -18,18 +20,25 @@ def create_gcast_blacklist_table():
                     chat_id INTEGER PRIMARY KEY NOT NULL
                 );
             ''')
+            for chat_id in DEFAULT_BLACKLIST_CHAT_IDS:
+                cursor.execute("INSERT OR IGNORE INTO gcast_blacklist (chat_id) VALUES (?)", (chat_id,))
+                if cursor.rowcount > 0:
+                    LOGGER(__name__).info(f"Chat ID default {chat_id} berhasil ditambahkan ke blacklist.")
+                else:
+                    LOGGER(__name__).info(f"Chat ID default {chat_id} sudah ada di blacklist.")
+            
             conn.commit()
-            LOGGER(__name__).info("Table 'gcast_blacklist' created or already exists.")
+            LOGGER(__name__).info("Tabel 'gcast_blacklist' berhasil dibuat atau sudah ada dan ID default diproses.")
             return True
         except sqlite3.Error as e:
-            LOGGER(__name__).error(f"Failed to create 'gcast_blacklist' table: {e}")
+            LOGGER(__name__).error(f"Gagal membuat tabel 'gcast_blacklist' atau menambahkan ID default: {e}")
             return False
     return False
 
 def add_chat_to_blacklist(chat_id: int) -> bool:
-    """Adds a chat ID to the GCAST blacklist."""
+    """Menambahkan ID chat ke blacklist GCAST."""
     if not DB_AVAILABLE:
-        LOGGER(__name__).warning("Database not available, cannot add chat to blacklist.")
+        LOGGER(__name__).warning("Database tidak tersedia, tidak dapat menambahkan chat ke blacklist.")
         return False
 
     conn, cursor = get_db_connection()
@@ -38,20 +47,20 @@ def add_chat_to_blacklist(chat_id: int) -> bool:
             cursor.execute("INSERT OR IGNORE INTO gcast_blacklist (chat_id) VALUES (?)", (chat_id,))
             conn.commit()
             if cursor.rowcount > 0:
-                LOGGER(__name__).info(f"Chat {chat_id} added to GCAST blacklist.")
+                LOGGER(__name__).info(f"Chat {chat_id} ditambahkan ke GCAST blacklist.")
                 return True
             else:
-                LOGGER(__name__).info(f"Chat {chat_id} is already in GCAST blacklist.")
+                LOGGER(__name__).info(f"Chat {chat_id} sudah ada di GCAST blacklist.")
                 return False
         except sqlite3.Error as e:
-            LOGGER(__name__).error(f"Failed to add chat {chat_id} to GCAST blacklist: {e}")
+            LOGGER(__name__).error(f"Gagal menambahkan chat {chat_id} ke GCAST blacklist: {e}")
             return False
     return False
 
 def remove_chat_from_blacklist(chat_id: int) -> bool:
-    """Removes a chat ID from the GCAST blacklist."""
+    """Menghapus ID chat dari blacklist GCAST."""
     if not DB_AVAILABLE:
-        LOGGER(__name__).warning("Database not available, cannot remove chat from blacklist.")
+        LOGGER(__name__).warning("Database tidak tersedia, tidak dapat menghapus chat dari blacklist.")
         return False
 
     conn, cursor = get_db_connection()
@@ -60,20 +69,20 @@ def remove_chat_from_blacklist(chat_id: int) -> bool:
             cursor.execute("DELETE FROM gcast_blacklist WHERE chat_id = ?", (chat_id,))
             conn.commit()
             if cursor.rowcount > 0:
-                LOGGER(__name__).info(f"Chat {chat_id} removed from GCAST blacklist.")
+                LOGGER(__name__).info(f"Chat {chat_id} dihapus dari GCAST blacklist.")
                 return True
             else:
-                LOGGER(__name__).info(f"Chat {chat_id} not found in GCAST blacklist.")
+                LOGGER(__name__).info(f"Chat {chat_id} tidak ditemukan di GCAST blacklist.")
                 return False
         except sqlite3.Error as e:
-            LOGGER(__name__).error(f"Failed to remove chat {chat_id} from GCAST blacklist: {e}")
+            LOGGER(__name__).error(f"Gagal menghapus chat {chat_id} dari GCAST blacklist: {e}")
             return False
     return False
 
 def get_gcast_blacklist() -> list[int]:
-    """Retrieves all chat IDs from the GCAST blacklist."""
+    """Mengambil semua ID chat dari blacklist GCAST."""
     if not DB_AVAILABLE:
-        LOGGER(__name__).warning("Database not available, cannot retrieve GCAST blacklist.")
+        LOGGER(__name__).warning("Database tidak tersedia, tidak dapat mengambil GCAST blacklist.")
         return []
 
     conn, cursor = get_db_connection()
@@ -83,13 +92,12 @@ def get_gcast_blacklist() -> list[int]:
             cursor.execute("SELECT chat_id FROM gcast_blacklist")
             rows = cursor.fetchall()
             blacklist = [row[0] for row in rows]
-            LOGGER(__name__).info(f"Retrieved {len(blacklist)} chats from GCAST blacklist.")
+            LOGGER(__name__).info(f"Mengambil {len(blacklist)} chat dari GCAST blacklist.")
         except sqlite3.Error as e:
-            LOGGER(__name__).error(f"Failed to retrieve GCAST blacklist: {e}")
+            LOGGER(__name__).error(f"Gagal mengambil GCAST blacklist: {e}")
     return blacklist
 
-# Call table creation function when the module is loaded
 if DB_AVAILABLE:
     create_gcast_blacklist_table()
 else:
-    LOGGER(__name__).error("Database not available when loading gcast_blacklist_db.py.")
+    LOGGER(__name__).error("Database tidak tersedia saat memuat gcast_blacklist_db.py.")
