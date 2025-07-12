@@ -15,7 +15,7 @@ import cv2
 import requests
 from bs4 import BeautifulSoup as bs
 from PIL import Image
-from pyrogram import Client, emoji, filters
+from pyrogram import Client, filters
 from pyrogram.enums import ParseMode
 from pyrogram.errors import StickersetInvalid, YouBlockedUser
 from pyrogram.raw.functions.messages import GetStickerSet
