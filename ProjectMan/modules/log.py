@@ -14,9 +14,9 @@ from pyrogram.types import Message
 
 from config import CMD_HANDLER as cmd, BOTLOG_CHATID # Pastikan BOTLOG_CHATID diimpor dari config
 from ProjectMan.helpers.basic import edit_or_reply
-# Mengimpor langsung fungsi dari modul no_log_pms_sql yang sudah dimigrasi
 from ProjectMan.helpers.SQL.no_log_pms_sql import is_approved, approve, disapprove
-# Mengimpor langsung fungsi dari modul globals yang sudah dimigrasi
+
+from ProjectMan.helpers.SQL.__init__ import LOGGER
 from ProjectMan.helpers.SQL.globals import addgvar, gvarstatus
 from ProjectMan.helpers.tools import get_arg
 
