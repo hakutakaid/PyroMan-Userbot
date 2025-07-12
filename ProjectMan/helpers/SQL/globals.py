@@ -30,10 +30,6 @@ if DB_AVAILABLE:
 else:
     LOGGER(__name__).error("Database tidak tersedia saat memuat globals.py.")
 
----
-
-## Fungsi Manajemen Variabel Global
-
 def gvarstatus(variable: str) -> str | None:
     if not DB_AVAILABLE:
         LOGGER(__name__).warning("Database tidak tersedia, tidak dapat mendapatkan status gvar.")
