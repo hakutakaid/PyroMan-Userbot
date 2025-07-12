@@ -1,4 +1,4 @@
-# ProjectMan/helpers/SQL/globals.py (Contoh, sesuaikan dengan implementasi Anda)
+# ProjectMan/helpers/SQL/globals.py
 
 import sqlite3
 
@@ -59,18 +59,41 @@ def gvarstatus(key: str) -> str | None:
             return None
     return None
 
-# Fungsi baru untuk mendapatkan BOTLOG_CHATID
+def delgvar(key: str) -> bool:
+    """Deletes a global variable."""
+    if not DB_AVAILABLE:
+        LOGGER(__name__).warning("Database not available, cannot delete gvar.")
+        return False
+
+    conn, cursor = get_db_connection()
+    if conn and cursor:
+        try:
+            cursor.execute("DELETE FROM gvar WHERE key = ?", (key,))
+            conn.commit()
+            if cursor.rowcount > 0:
+                LOGGER(__name__).info(f"Global variable '{key}' deleted successfully.")
+                return True
+            else:
+                LOGGER(__name__).info(f"Global variable '{key}' not found, no deletion performed.")
+                return False
+        except sqlite3.Error as e:
+            LOGGER(__name__).error(f"Failed to delete gvar '{key}': {e}")
+            return False
+    return False
+
+
+# Fungsi untuk mendapatkan BOTLOG_CHATID (tetap sama)
 def get_botlog_chat_id() -> int | str | None:
     """Retrieves BOTLOG_CHATID from global variables."""
     chat_id_str = gvarstatus("BOTLOG_CHATID")
     if chat_id_str:
         try:
-            return int(chat_id_str) # Coba konversi ke int jika itu ID numerik
+            return int(chat_id_str)
         except ValueError:
-            return chat_id_str # Biarkan sebagai string jika itu username (@channel)
+            return chat_id_str
     return None
 
-# Fungsi baru untuk mengatur BOTLOG_CHATID
+# Fungsi untuk mengatur BOTLOG_CHATID (tetap sama)
 def set_botlog_chat_id(chat_id: int | str):
     """Sets BOTLOG_CHATID in global variables."""
     addgvar("BOTLOG_CHATID", str(chat_id))
