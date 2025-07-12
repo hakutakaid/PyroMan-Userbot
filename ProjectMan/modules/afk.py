@@ -1,41 +1,29 @@
-# Credits: @mrismanaziz
-# Copyright (C) 2022 Pyro-ManUserbot
-#
-# This file is a part of < https://github.com/mrismanaziz/PyroMan-Userbot/ >
-# PLease read the GNU Affero General Public License in
-# <https://www.github.com/mrismanaziz/PyroMan-Userbot/blob/main/LICENSE/>.
-#
-# t.me/SharingUserbot & t.me/Lunatic0de
-
 import time
 
-from pyrogram import Client, filters
+from pyrogram import Client, filters, enums
 from pyrogram.types import Message
 
-from config import CMD_HANDLER as cmd, BOTLOG_CHATID # Mengimpor BOTLOG_CHATID dari config jika belum
-from ProjectMan import BOTLOG_CHATID # Menggunakan BOTLOG_CHATID yang sudah didefinisikan
+from config import CMD_HANDLER as cmd, BOTLOG_CHATID
 from ProjectMan.helpers.msg_types import Types, get_message_type
 from ProjectMan.helpers.parser import escape_markdown, mention_markdown
-from ProjectMan.helpers.SQL.afk_db import get_afk, set_afk # Ini tetap sama karena fungsi DB sudah dimigrasi
+from ProjectMan.helpers.SQL.afk_db import get_afk, set_afk
 from ProjectMan.modules.help import add_command_help
+from ProjectMan.helpers.SQL.__init__ import LOGGER # Explicitly import LOGGER
 
-# Set priority to 11 and 12
 MENTIONED = []
 AFK_RESTIRECT = {}
-DELAY_TIME = 3  # seconds
+DELAY_TIME = 3
 
 
 @Client.on_message(filters.me & filters.command("afk", cmd))
 async def afk(client: Client, message: Message):
-    # Pastikan perintah afk_db.set_afk() menerima argumen yang benar
-    # message.text.split(None, 1)[1] akan memberikan alasan jika ada
     if len(message.text.split()) >= 2:
         reason = message.text.split(None, 1)[1]
         set_afk(True, reason)
         await message.edit(
             "❏ {} **Telah AFK!**\n└ **Karena:** `{}`".format(
                 mention_markdown(message.from_user.id, message.from_user.first_name),
-                escape_markdown(reason), # Gunakan escape_markdown untuk alasan
+                escape_markdown(reason),
             )
         )
     else:
@@ -55,27 +43,22 @@ async def afk_mentioned(client: Client, message: Message):
     global MENTIONED
     global AFK_RESTIRECT
 
-    get = get_afk() # Memanggil fungsi dari afk_db.py yang sudah dimigrasi
+    get = get_afk()
     if get and get["afk"]:
-        # Pyrogram secara otomatis menangani ID grup sebagai integer negatif.
-        # Konversi ke string untuk konsistensi dengan penyimpanan jika diperlukan,
-        # tetapi biasanya lebih baik bekerja dengan int secara langsung jika itu ID chat.
-        # Jika Anda yakin ID chat di DB disimpan sebagai string tanpa `-100`, maka konversi ini perlu.
-        # Kalau tidak, biarkan sebagai int. Asumsi Anda menyimpan ID chat di DB sebagai TEXT dari int.
-        cid = str(message.chat.id).replace("-100", "") if "-" in str(message.chat.id) else str(message.chat.id)
-        cid_int = message.chat.id # Gunakan integer asli untuk perbandingan waktu
+        cid_int = message.chat.id
+        cid_str = str(message.chat.id).replace("-100", "")
 
         if cid_int in AFK_RESTIRECT:
             if int(AFK_RESTIRECT[cid_int]) >= int(time.time()):
                 return
-        AFK_RESTIRECT[cid_int] = int(time.time()) + DELAY_TIME # Gunakan cid_int sebagai kunci
+        AFK_RESTIRECT[cid_int] = int(time.time()) + DELAY_TIME
 
-        reason = get["reason"] if get["reason"] else "Alasan tidak diberikan." # Tangani alasan kosong
+        reason = get["reason"] if get["reason"] else "Alasan tidak diberikan."
 
         if reason:
             await message.reply(
                 "❏ {} **Sedang AFK!**\n└ **Karena:** `{}`".format(
-                    client.me.mention, escape_markdown(reason) # Escape reason untuk markdown
+                    client.me.mention, escape_markdown(reason)
                 )
             )
         else:
@@ -83,35 +66,38 @@ async def afk_mentioned(client: Client, message: Message):
                 f"**Maaf** {client.me.first_name} **Sedang AFK!**"
             )
 
-        # Pastikan text diambil dengan benar dari message (teks atau caption)
         message_content = ""
         if message.text:
             message_content = message.text
         elif message.caption:
             message_content = message.caption
-        elif get_message_type(message)[1] != Types.TEXT: # Jika bukan teks/caption, gunakan nama tipe
+        elif get_message_type(message)[1] != Types.TEXT:
             message_content = get_message_type(message)[1].name
 
+        # Handle message.chat.title potentially being None for private chats
+        chat_title_for_log = message.chat.title if message.chat.title else "Private Chat"
+        
         MENTIONED.append(
             {
                 "user": message.from_user.first_name,
                 "user_id": message.from_user.id,
-                "chat": message.chat.title,
-                "chat_id": cid, # tetap pakai yang sudah diproses untuk logging link
+                "chat": chat_title_for_log, # Use the handled chat title
+                "chat_id": cid_str,
                 "text": message_content,
                 "message_id": message.id,
             }
         )
         try:
-            await client.send_message(
-                BOTLOG_CHATID,
-                "**#MENTION**\n • **Dari :** {}\n • **Grup :** `{}`\n • **Pesan :** `{}`".format(
-                    message.from_user.mention,
-                    escape_markdown(message.chat.title), # Escape chat title
-                    escape_markdown(message_content[:3500]), # Escape pesan
-                ),
-            )
-        except Exception as e: # Tangani exception spesifik daripada BaseException
+            if BOTLOG_CHATID:
+                await client.send_message(
+                    BOTLOG_CHATID,
+                    "**#MENTION**\n • **Dari :** {}\n • **Grup :** `{}`\n • **Pesan :** `{}`".format(
+                        message.from_user.mention,
+                        escape_markdown(chat_title_for_log),
+                        escape_markdown(message_content[:3500]),
+                    ),
+                )
+        except Exception as e:
             LOGGER(__name__).error(f"Gagal mengirim log mention ke BOTLOG_CHATID: {e}")
 
 
@@ -120,39 +106,39 @@ async def no_longer_afk(client: Client, message: Message):
     global MENTIONED
     global AFK_RESTIRECT
 
-    get = get_afk() # Memanggil fungsi dari afk_db.py yang sudah dimigrasi
+    get = get_afk()
     if get and get["afk"]:
-        set_afk(False, "") # Mengatur AFK ke False melalui fungsi DB
+        set_afk(False, "")
         try:
-            await client.send_message(BOTLOG_CHATID, "**Anda sudah tidak lagi AFK!**")
+            if BOTLOG_CHATID:
+                await client.send_message(BOTLOG_CHATID, "**Anda sudah tidak lagi AFK!**")
         except Exception as e:
             LOGGER(__name__).error(f"Gagal mengirim pesan tidak AFK ke BOTLOG_CHATID: {e}")
-            pass # Lanjutkan eksekusi meskipun gagal kirim log
+            pass
 
-        if MENTIONED: # Hanya kirim log mention jika ada mention
+        if MENTIONED:
             text = "**Total {} Mention Saat Sedang AFK**\n".format(len(MENTIONED))
             for x in MENTIONED:
                 msg_text_display = x["text"]
-                if len(msg_text_display) >= 11: # Perbaiki ini menjadi 500 atau lebih jika ingin lebih panjang
-                    msg_text_display = "{}...".format(msg_text_display[:500]) # Batasi teks untuk display
+                if len(msg_text_display) >= 11:
+                    msg_text_display = "{}...".format(msg_text_display[:500])
 
-                # Pastikan format link benar dan semua bagian di-escape markdown
                 text += "- [{}](https://t.me/c/{}/{}) ({}): `{}`\n".format(
                     escape_markdown(x["user"]),
-                    x["chat_id"], # chat_id harus berupa string tanpa "-100" untuk link t.me/c
+                    x["chat_id"],
                     x["message_id"],
-                    escape_markdown(x["chat"]), # Escape nama chat
-                    escape_markdown(msg_text_display), # Escape teks pesan
+                    escape_markdown(x["chat"]),
+                    escape_markdown(msg_text_display),
                 )
             try:
-                await client.send_message(BOTLOG_CHATID, text)
+                if BOTLOG_CHATID:
+                    await client.send_message(BOTLOG_CHATID, text)
             except Exception as e:
                 LOGGER(__name__).error(f"Gagal mengirim ringkasan mention AFK ke BOTLOG_CHATID: {e}")
                 pass
         MENTIONED = []
-        AFK_RESTIRECT = {} # Reset restriksi AFK saat tidak AFK lagi
+        AFK_RESTIRECT = {}
 
-# Helper untuk menambahkan perintah bantuan (sesuai struktur ProjectMan Anda)
 add_command_help(
     "afk",
     [

@@ -11,11 +11,11 @@ class Logger:
 
 LOGGER = lambda name: Logger()
 
-DB_URL = "sqlite:////storage/emulated/0/PyroMan-Userbot/projectman.db"
+DB_URL = "hakutakaid.db"
 
 SPAMBOT = "SPAMBOT"
 
-SQLITE_DB_PATH = DB_URL.replace("sqlite:///", "")
+SQLITE_DB_PATH = "hakutakaid.db"
 
 db_dir = os.path.dirname(SQLITE_DB_PATH)
 if db_dir and not os.path.exists(db_dir):
