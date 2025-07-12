@@ -16,7 +16,6 @@ kurigram
 python-dotenv
 requests
 speedtest-cli==2.1.3
-sqlalchemy==1.3.23
 telegraph
 tgcrypto-pyrofork
 tracemoepy

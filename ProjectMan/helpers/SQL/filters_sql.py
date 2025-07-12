@@ -1,7 +1,5 @@
 import sqlite3
 
-# Asumsikan ProjectMan.helpers.SQL sudah diinisialisasi dan menyediakan koneksi DB
-# dan LOGGER.
 from ProjectMan.helpers.SQL.__init__ import get_db_connection, DB_AVAILABLE, LOGGER
 
 def create_filters_table():
@@ -13,7 +11,6 @@ def create_filters_table():
     conn, cursor = get_db_connection()
     if conn and cursor:
         try:
-            # Menggunakan dua kolom sebagai PRIMARY KEY untuk menggantikan composite primary key SQLAlchemy
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS filters (
                     chat_id TEXT NOT NULL,
