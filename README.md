@@ -1,43 +1,63 @@
-# PyroMan-Userbot Telegram
-
-PyroMan-Userbot adalah userbot Telegram modular yang berjalan di Python3 dengan Library Pyrogram.
-
-Saya membuat repository ini untuk bersenang-senang sekaligus membantu anda mengelola grup secara efisien dan untuk membantu mengurangi kebosanan saat menggunakan telegram.
-
-## ⚠️ Disclaimer
-
-```
+PyroMan-Userbot Telegram
+PyroMan-Userbot adalah userbot Telegram modular yang berjalan di Python 3 dengan Library Pyrogram.
+Saya membuat repository ini untuk bersenang-senang sekaligus membantu Anda mengelola grup secara efisien dan untuk mengurangi kebosanan saat menggunakan Telegram.
+⚠️ Disclaimer
 Saya tidak bertanggung jawab atas penyalahgunaan bot ini.
 Gunakan bot ini dengan risiko Anda sendiri.
 Gunakan userbot ini dengan bijak.
-Ketika anda sudah memasang userbot ini, berarti anda sudah siap dengan resikonya.
-```
+Ketika Anda sudah memasang userbot ini, berarti Anda sudah siap dengan risikonya.
 
-<h3 align="center">Klik Tombol di Bawah ini untuk Deploy di Heroku</h3>
-<p align="center"><a href="https://risman.vercel.app/deploy-pyro.html"><img src="https://www.herokucdn.com/deploy/button.png" alt="Deploy to Heroku" target="_blank"/></a></p>
+⚙️ Cara Memasang di VPS (Virtual Private Server)
+Berikut adalah langkah-langkah untuk menginstal PyroMan-Userbot di VPS Anda:
+ * Akses VPS Anda
+   Gunakan SSH untuk terhubung ke VPS Anda. Contoh:
+   ssh user@your_vps_ip
 
-## 🖇 Generating Pyrogram String Session
-    
-> Anda memerlukan APP ID & API HASH Telegram untuk mengambil sesi Pyrogram. ambil APP ID dan API Hash di my.telegram.org
-- Generate Session via <a href="https://repl.it/@mrismanaziz/stringen?lite=1&outputonly=1">Repl</a>
-- Generate Session via <a href="https://t.me/StringManRobot">Telegram String Generation Bot</a>
-## 🏷 Support
+ * Perbarui Sistem
+   Pastikan sistem Anda up-to-date:
+   sudo apt update && sudo apt upgrade -y
 
-- Follow Channel [@Lunatic0de](https://t.me/Lunatic0de) untuk info Update bot 
-- Gabung Group [@SharingUserbot](https://t.me/SharingUserbot) untuk diskusi, pelaporan bug, dan bantuan tentang PyroMan-Userbot.
+ * Kloning Repository
+   Kloning repository PyroMan-Userbot ke VPS Anda:
+   git clone https://github.com/mrismanaziz/PyroMan-Userbot.git
+cd PyroMan-Userbot
 
-## 👨🏻‍💻 Credits
--  [Dan](https://github.com/delivrance) for [Pyrogram](https://github.com/pyrogram/pyrogram)
--  [Risman](https://github.com/mrismanaziz) for [PyroMan-Userbot](https://github.com/mrismanaziz/PyroMan-Userbot)
+ * Buat Virtual Environment dan Instal Dependensi
+   Sangat disarankan untuk menggunakan virtual environment untuk mengelola dependensi.
+   python3 -m venv venv
+source venv/bin/activate
+pip3 install -r requirements.txt
 
-#### Special Thanks To [Everyone](https://github.com/mrismanaziz/PyroMan-Userbot/graphs/contributors) Who Has Helped Make This Userbot Awesome!
--  [TeamDerUntergang](https://github.com/TeamDerUntergang/Telegram-SedenUserBot) : SedenUserBot
--  [TheHamkerCat](https://github.com/TheHamkerCat/WilliamButcherBot) : WilliamButcherBot
--  [TeamYukki](https://github.com/TeamYukki/YukkiMusicBot) : YukkiMusicBot
--  [ITZ-ZAID](https://github.com/ITZ-ZAID) : Zaid-UserBot
--  [Risman](https://github.com/mrismanaziz) : PyroMan-Userbot
--  [Tofikdn](https://github.com/tofikdn) : Tede
--  [Toni](https://github.com/Toni880) : Prime-UserBot
+ * Konfigurasi (Environment Variables)
+   Anda perlu mengatur environment variables seperti API_ID, API_HASH, dan STRING_SESSION. Cara termudah adalah membuat file .env di root directory PyroMan-Userbot dan menambahkannya di sana:
+   API_ID=YOUR_API_ID
+API_HASH=YOUR_API_HASH
+STRING_SESSION=YOUR_PYROGRAM_STRING_SESSION
 
-## 📑 License
-Licensed under [GNU General Public License v3.0](https://github.com/mrismanaziz/PyroMan-Userbot/blob/Man-Userbot/LICENSE) All designs were created by [@mrismanaziz](https://github.com/mrismanaziz)
+   (Ganti YOUR_API_ID, YOUR_API_HASH, dan YOUR_PYROGRAM_STRING_SESSION dengan nilai Anda.)
+ * Jalankan Bot
+   Setelah semua dependensi terinstal dan konfigurasi selesai, Anda bisa menjalankan bot:
+   python3 -m pyroman
+
+   Untuk menjalankan bot di latar belakang secara terus-menerus, Anda bisa menggunakan screen atau tmux.
+🖇 Meng-Generate Pyrogram String Session
+> Anda memerlukan APP ID & API HASH Telegram untuk mengambil sesi Pyrogram. Ambil APP ID dan API Hash di my.telegram.org.
+> 
+ * Generate Session via Repl.it
+ * Generate Session via Telegram String Generation Bot
+🏷 Dukungan
+ * Follow Channel @Lunatic0de untuk info Update bot.
+ * Gabung Group @SharingUserbot untuk diskusi, pelaporan bug, dan bantuan tentang PyroMan-Userbot.
+👨🏻‍💻 Kredit
+ * Dan untuk Pyrogram
+ * Risman untuk PyroMan-Userbot
+Terima Kasih Khusus untuk Semua yang Telah Membantu Membuat Userbot ini Luar Biasa!
+ * TeamDerUntergang : SedenUserBot
+ * TheHamkerCat : WilliamButcherBot
+ * TeamYukki : YukkiMusicBot
+ * ITZ-ZAID : Zaid-UserBot
+ * Risman : PyroMan-Userbot
+ * Tofikdn : Tede
+ * Toni : Prime-UserBot
+📑 Lisensi
+Berlisensi di bawah GNU General Public License v3.0. Semua desain dibuat oleh @mrismanaziz.
