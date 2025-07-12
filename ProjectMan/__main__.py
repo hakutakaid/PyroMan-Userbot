@@ -13,7 +13,7 @@ from pyrogram import idle
 from uvloop import install
 
 from config import BOT_VER, CMD_HANDLER
-from ProjectMan import BOTLOG_CHATID, LOGGER, LOOP, aiosession, bot1, bots
+from ProjectMan import BOTLOG_CHATID, LOGGER, LOOP, bot1, bots
 from ProjectMan.helpers.misc import create_botlog, heroku
 from ProjectMan.modules import ALL_MODULES
 
