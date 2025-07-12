@@ -1,87 +1,82 @@
+# ProjectMan/helpers/SQL/globals.py (Contoh, sesuaikan dengan implementasi Anda)
+
 import sqlite3
 
 from ProjectMan.helpers.SQL.__init__ import get_db_connection, DB_AVAILABLE, LOGGER
 
-def create_globals_table():
+def create_gvar_table():
+    """Creates the 'gvar' table if it doesn't already exist."""
     if not DB_AVAILABLE:
-        LOGGER(__name__).warning("Database tidak tersedia, tidak dapat membuat tabel 'globals'.")
+        LOGGER(__name__).warning("Database not available, cannot create 'gvar' table.")
         return False
 
     conn, cursor = get_db_connection()
     if conn and cursor:
         try:
             cursor.execute('''
-                CREATE TABLE IF NOT EXISTS globals (
-                    variable TEXT NOT NULL,
-                    value TEXT NOT NULL,
-                    PRIMARY KEY (variable)
+                CREATE TABLE IF NOT EXISTS gvar (
+                    key TEXT PRIMARY KEY NOT NULL,
+                    value TEXT
                 );
             ''')
             conn.commit()
-            LOGGER(__name__).info("Tabel 'globals' berhasil dibuat atau sudah ada.")
+            LOGGER(__name__).info("Table 'gvar' created or already exists.")
             return True
         except sqlite3.Error as e:
-            LOGGER(__name__).error(f"Gagal membuat tabel 'globals': {e}")
+            LOGGER(__name__).error(f"Failed to create 'gvar' table: {e}")
             return False
     return False
 
-if DB_AVAILABLE:
-    create_globals_table()
-else:
-    LOGGER(__name__).error("Database tidak tersedia saat memuat globals.py.")
-
-def gvarstatus(variable: str) -> str | None:
+def addgvar(key: str, value: str):
+    """Adds or updates a global variable."""
     if not DB_AVAILABLE:
-        LOGGER(__name__).warning("Database tidak tersedia, tidak dapat mendapatkan status gvar.")
+        LOGGER(__name__).warning("Database not available, cannot set gvar.")
+        return
+
+    conn, cursor = get_db_connection()
+    if conn and cursor:
+        try:
+            cursor.execute("INSERT OR REPLACE INTO gvar (key, value) VALUES (?, ?)", (key, value))
+            conn.commit()
+            LOGGER(__name__).info(f"Global variable '{key}' set to '{value}'.")
+        except sqlite3.Error as e:
+            LOGGER(__name__).error(f"Failed to set gvar '{key}': {e}")
+
+def gvarstatus(key: str) -> str | None:
+    """Gets the value of a global variable."""
+    if not DB_AVAILABLE:
+        LOGGER(__name__).warning("Database not available, cannot get gvar status.")
         return None
 
     conn, cursor = get_db_connection()
     if conn and cursor:
         try:
-            cursor.execute("SELECT value FROM globals WHERE variable = ?", (variable,))
+            cursor.execute("SELECT value FROM gvar WHERE key = ?", (key,))
             row = cursor.fetchone()
-            if row:
-                return row[0]
-            else:
-                return None
+            return row[0] if row else None
         except sqlite3.Error as e:
-            LOGGER(__name__).error(f"Gagal mendapatkan gvar '{variable}': {e}")
+            LOGGER(__name__).error(f"Failed to get gvar status for '{key}': {e}")
             return None
     return None
 
-
-def addgvar(variable: str, value: str):
-    if not DB_AVAILABLE:
-        LOGGER(__name__).warning("Database tidak tersedia, tidak dapat menambahkan gvar.")
-        return
-
-    conn, cursor = get_db_connection()
-    if conn and cursor:
+# Fungsi baru untuk mendapatkan BOTLOG_CHATID
+def get_botlog_chat_id() -> int | str | None:
+    """Retrieves BOTLOG_CHATID from global variables."""
+    chat_id_str = gvarstatus("BOTLOG_CHATID")
+    if chat_id_str:
         try:
-            cursor.execute("INSERT OR REPLACE INTO globals (variable, value) VALUES (?, ?)", (variable, value))
-            conn.commit()
-            LOGGER(__name__).info(f"Gvar '{variable}' diatur ke '{value}'.")
-        except sqlite3.Error as e:
-            LOGGER(__name__).error(f"Gagal menambahkan/memperbarui gvar '{variable}': {e}")
-    else:
-        LOGGER(__name__).error("Koneksi database tidak valid saat mencoba menambahkan gvar.")
+            return int(chat_id_str) # Coba konversi ke int jika itu ID numerik
+        except ValueError:
+            return chat_id_str # Biarkan sebagai string jika itu username (@channel)
+    return None
 
+# Fungsi baru untuk mengatur BOTLOG_CHATID
+def set_botlog_chat_id(chat_id: int | str):
+    """Sets BOTLOG_CHATID in global variables."""
+    addgvar("BOTLOG_CHATID", str(chat_id))
 
-def delgvar(variable: str):
-    if not DB_AVAILABLE:
-        LOGGER(__name__).warning("Database tidak tersedia, tidak dapat menghapus gvar.")
-        return
-
-    conn, cursor = get_db_connection()
-    if conn and cursor:
-        try:
-            cursor.execute("DELETE FROM globals WHERE variable = ?", (variable,))
-            if cursor.rowcount > 0:
-                conn.commit()
-                LOGGER(__name__).info(f"Gvar '{variable}' berhasil dihapus.")
-            else:
-                LOGGER(__name__).info(f"Gvar '{variable}' tidak ditemukan untuk dihapus.")
-        except sqlite3.Error as e:
-            LOGGER(__name__).error(f"Gagal menghapus gvar '{variable}': {e}")
-    else:
-        LOGGER(__name__).error("Koneksi database tidak valid saat mencoba menghapus gvar.")
+# Call table creation function when the module is loaded
+if DB_AVAILABLE:
+    create_gvar_table()
+else:
+    LOGGER(__name__).error("Database not available when loading globals.py.")
