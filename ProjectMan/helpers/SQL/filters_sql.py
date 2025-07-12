@@ -3,7 +3,6 @@ import sqlite3
 from ProjectMan.helpers.SQL.__init__ import get_db_connection, DB_AVAILABLE, LOGGER
 
 def create_filters_table():
-    """Membuat tabel 'filters' jika belum ada."""
     if not DB_AVAILABLE:
         LOGGER(__name__).warning("Database tidak tersedia, tidak dapat membuat tabel 'filters'.")
         return False
@@ -16,7 +15,7 @@ def create_filters_table():
                     chat_id TEXT NOT NULL,
                     keyword TEXT NOT NULL,
                     reply TEXT,
-                    f_mesg_id INTEGER, -- Numeric di SQLAlchemy menjadi INTEGER di SQLite
+                    f_mesg_id INTEGER,
                     PRIMARY KEY (chat_id, keyword)
                 );
             ''')
@@ -28,7 +27,6 @@ def create_filters_table():
             return False
     return False
 
-# Panggil fungsi untuk membuat tabel filters saat file ini dimuat
 if DB_AVAILABLE:
     create_filters_table()
 else:
@@ -39,10 +37,6 @@ else:
 ## Fungsi Manajemen Filter
 
 def get_filter(chat_id: int | str, keyword: str) -> dict | None:
-    """
-    Mendapatkan filter berdasarkan chat_id dan keyword.
-    Mengembalikan dict filter atau None jika tidak ditemukan.
-    """
     if not DB_AVAILABLE:
         LOGGER(__name__).warning("Database tidak tersedia, tidak dapat mendapatkan filter.")
         return None
@@ -55,7 +49,6 @@ def get_filter(chat_id: int | str, keyword: str) -> dict | None:
             row = cursor.fetchone()
             if row:
                 LOGGER(__name__).info(f"Filter ditemukan untuk chat {chat_id}, keyword '{keyword}'.")
-                # Mengubah row menjadi dictionary agar kompatibel dengan objek Filters sebelumnya
                 return {
                     "chat_id": row[0],
                     "keyword": row[1],
@@ -72,10 +65,6 @@ def get_filter(chat_id: int | str, keyword: str) -> dict | None:
 
 
 def get_filters(chat_id: int | str) -> list[dict]:
-    """
-    Mendapatkan semua filter untuk chat_id tertentu.
-    Mengembalikan list berisi dict filter.
-    """
     if not DB_AVAILABLE:
         LOGGER(__name__).warning("Database tidak tersedia, tidak dapat mendapatkan filter.")
         return []
@@ -100,10 +89,6 @@ def get_filters(chat_id: int | str) -> list[dict]:
 
 
 def add_filter(chat_id: int | str, keyword: str, reply: str, f_mesg_id: int) -> bool:
-    """
-    Menambahkan filter baru atau memperbarui filter yang sudah ada.
-    Mengembalikan True jika filter baru ditambahkan, False jika diperbarui.
-    """
     if not DB_AVAILABLE:
         LOGGER(__name__).warning("Database tidak tersedia, tidak dapat menambahkan filter.")
         return False
@@ -111,22 +96,20 @@ def add_filter(chat_id: int | str, keyword: str, reply: str, f_mesg_id: int) -> 
     conn, cursor = get_db_connection()
     if conn and cursor:
         try:
-            to_check = get_filter(chat_id, keyword) # Menggunakan fungsi get_filter yang sudah dimigrasi
+            to_check = get_filter(chat_id, keyword)
             
             if not to_check:
-                # Filter tidak ada, sisipkan yang baru
                 cursor.execute("INSERT INTO filters (chat_id, keyword, reply, f_mesg_id) VALUES (?, ?, ?, ?)",
                                (str(chat_id), keyword, reply, f_mesg_id))
                 conn.commit()
                 LOGGER(__name__).info(f"Filter baru ditambahkan: chat_id={chat_id}, keyword='{keyword}'.")
                 return True
             else:
-                # Filter sudah ada, perbarui
                 cursor.execute("UPDATE filters SET reply = ?, f_mesg_id = ? WHERE chat_id = ? AND keyword = ?",
                                (reply, f_mesg_id, str(chat_id), keyword))
                 conn.commit()
                 LOGGER(__name__).info(f"Filter diperbarui: chat_id={chat_id}, keyword='{keyword}'.")
-                return False # Mengembalikan False karena filter diperbarui, bukan baru ditambahkan
+                return False
         except sqlite3.Error as e:
             LOGGER(__name__).error(f"Gagal menambahkan/memperbarui filter: {e}")
             return False
@@ -134,10 +117,6 @@ def add_filter(chat_id: int | str, keyword: str, reply: str, f_mesg_id: int) -> 
 
 
 def remove_filter(chat_id: int | str, keyword: str) -> bool:
-    """
-    Menghapus filter berdasarkan chat_id dan keyword.
-    Mengembalikan True jika filter berhasil dihapus, False jika tidak ditemukan.
-    """
     if not DB_AVAILABLE:
         LOGGER(__name__).warning("Database tidak tersedia, tidak dapat menghapus filter.")
         return False
@@ -145,7 +124,7 @@ def remove_filter(chat_id: int | str, keyword: str) -> bool:
     conn, cursor = get_db_connection()
     if conn and cursor:
         try:
-            to_check = get_filter(chat_id, keyword) # Menggunakan fungsi get_filter yang sudah dimigrasi
+            to_check = get_filter(chat_id, keyword)
             if not to_check:
                 LOGGER(__name__).info(f"Filter tidak ditemukan untuk dihapus: chat_id={chat_id}, keyword='{keyword}'.")
                 return False
@@ -159,4 +138,3 @@ def remove_filter(chat_id: int | str, keyword: str) -> bool:
             LOGGER(__name__).error(f"Gagal menghapus filter: {e}")
             return False
     return False
-

@@ -1,11 +1,8 @@
 import sqlite3
 
-# Assume ProjectMan.helpers.SQL is already initialized and provides the DB connection
-# and LOGGER.
 from ProjectMan.helpers.SQL.__init__ import get_db_connection, DB_AVAILABLE, LOGGER
 
 def create_no_log_pms_table():
-    """Creates the 'no_log_pms' table if it doesn't already exist."""
     if not DB_AVAILABLE:
         LOGGER(__name__).warning("Database not available, cannot create 'no_log_pms' table.")
         return False
@@ -15,7 +12,7 @@ def create_no_log_pms_table():
         try:
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS no_log_pms (
-                    chat_id INTEGER PRIMARY KEY -- Numeric in SQLAlchemy becomes INTEGER in SQLite
+                    chat_id INTEGER PRIMARY KEY
                 );
             ''')
             conn.commit()
@@ -26,7 +23,6 @@ def create_no_log_pms_table():
             return False
     return False
 
-# Call the function to create the no_log_pms table when this file is loaded
 if DB_AVAILABLE:
     create_no_log_pms_table()
 else:
@@ -37,10 +33,6 @@ else:
 ## PM Logging Approval Functions
 
 def is_approved(chat_id: int) -> bool | None:
-    """
-    Checks if a chat_id is approved to not log PMs.
-    Returns True if approved, False if not, or None if a DB error occurs.
-    """
     if not DB_AVAILABLE:
         LOGGER(__name__).warning("Database not available, cannot check approval status.")
         return None
@@ -56,11 +48,7 @@ def is_approved(chat_id: int) -> bool | None:
             return None
     return None
 
-
 def approve(chat_id: int):
-    """
-    Approves a chat_id to not log PMs.
-    """
     if not DB_AVAILABLE:
         LOGGER(__name__).warning("Database not available, cannot approve chat.")
         return
@@ -68,7 +56,6 @@ def approve(chat_id: int):
     conn, cursor = get_db_connection()
     if conn and cursor:
         try:
-            # Use INSERT OR IGNORE to prevent errors if chat_id is already approved
             cursor.execute("INSERT OR IGNORE INTO no_log_pms (chat_id) VALUES (?)", (chat_id,))
             conn.commit()
             LOGGER(__name__).info(f"Chat {chat_id} has been approved (if not already).")
@@ -77,11 +64,7 @@ def approve(chat_id: int):
     else:
         LOGGER(__name__).error("Invalid database connection when trying to approve chat.")
 
-
 def disapprove(chat_id: int):
-    """
-    Disapproves a chat_id, allowing PMs to be logged.
-    """
     if not DB_AVAILABLE:
         LOGGER(__name__).warning("Database not available, cannot disapprove chat.")
         return
@@ -90,7 +73,7 @@ def disapprove(chat_id: int):
     if conn and cursor:
         try:
             cursor.execute("DELETE FROM no_log_pms WHERE chat_id = ?", (chat_id,))
-            if cursor.rowcount > 0: # Check if any rows were affected (deleted)
+            if cursor.rowcount > 0:
                 conn.commit()
                 LOGGER(__name__).info(f"Chat {chat_id} has been disapproved.")
             else:

@@ -1,16 +1,9 @@
 import threading
 import sqlite3
 
-# Assume ProjectMan.helpers.SQL is already initialized and provides the DB connection
-# and LOGGER.
 from ProjectMan.helpers.SQL.__init__ import get_db_connection, DB_AVAILABLE, LOGGER
 
-# ---
-# Table Creation Functions
-# ---
-
 def create_whitelist_users_table():
-    """Creates the 'pmapprove' table (for WhitelistUsers) if it doesn't already exist."""
     if not DB_AVAILABLE:
         LOGGER(__name__).warning("Database not available, cannot create 'pmapprove' table.")
         return False
@@ -32,9 +25,7 @@ def create_whitelist_users_table():
             return False
     return False
 
-
 def create_req_users_table():
-    """Creates the 'getpmapprove' table (for ReqUsers) if it doesn't already exist."""
     if not DB_AVAILABLE:
         LOGGER(__name__).warning("Database not available, cannot create 'getpmapprove' table.")
         return False
@@ -56,7 +47,6 @@ def create_req_users_table():
             return False
     return False
 
-# Call table creation functions when the module is loaded
 if DB_AVAILABLE:
     create_whitelist_users_table()
     create_req_users_table()
@@ -69,11 +59,7 @@ else:
 
 INSERTION_LOCK = threading.RLock()
 
-
 def set_whitelist(user_id: int | str, username: str):
-    """
-    Adds or updates a user in the PM whitelist.
-    """
     if not DB_AVAILABLE:
         LOGGER(__name__).warning("Database not available, cannot set whitelist.")
         return
@@ -82,8 +68,6 @@ def set_whitelist(user_id: int | str, username: str):
         conn, cursor = get_db_connection()
         if conn and cursor:
             try:
-                # Use INSERT OR REPLACE INTO for upsert behavior
-                # This will insert if PK not exists, or replace the entire row if PK exists
                 cursor.execute("INSERT OR REPLACE INTO pmapprove (user_id, username) VALUES (?, ?)",
                                (str(user_id), str(username)))
                 conn.commit()
@@ -93,12 +77,7 @@ def set_whitelist(user_id: int | str, username: str):
         else:
             LOGGER(__name__).error("Invalid database connection when trying to set whitelist.")
 
-
 def del_whitelist(user_id: int | str) -> bool:
-    """
-    Removes a user from the PM whitelist.
-    Returns True if user was removed, False otherwise.
-    """
     if not DB_AVAILABLE:
         LOGGER(__name__).warning("Database not available, cannot delete whitelist.")
         return False
@@ -122,12 +101,7 @@ def del_whitelist(user_id: int | str) -> bool:
             LOGGER(__name__).error("Invalid database connection when trying to delete whitelist.")
             return False
 
-
 def get_whitelist(user_id: int | str) -> str:
-    """
-    Retrieves the username of a whitelisted user.
-    Returns the username (str) or an empty string if not found or DB unavailable.
-    """
     if not DB_AVAILABLE:
         LOGGER(__name__).warning("Database not available, cannot get whitelist.")
         return ""
@@ -138,19 +112,15 @@ def get_whitelist(user_id: int | str) -> str:
             cursor.execute("SELECT username FROM pmapprove WHERE user_id = ?", (str(user_id),))
             row = cursor.fetchone()
             if row:
-                return row[0] # Return the username
+                return row[0]
             else:
-                return "" # Return empty string if not found
+                return ""
         except sqlite3.Error as e:
             LOGGER(__name__).error(f"Failed to get whitelist for user {user_id}: {e}")
             return ""
-    return "" # Fallback if connection fails
-
+    return ""
 
 def set_req(user_id: int | str, username: str):
-    """
-    Adds or updates a user in the PM request list.
-    """
     if not DB_AVAILABLE:
         LOGGER(__name__).warning("Database not available, cannot set PM request.")
         return
@@ -159,7 +129,6 @@ def set_req(user_id: int | str, username: str):
         conn, cursor = get_db_connection()
         if conn and cursor:
             try:
-                # Use INSERT OR REPLACE INTO for upsert behavior
                 cursor.execute("INSERT OR REPLACE INTO getpmapprove (user_id, username) VALUES (?, ?)",
                                (str(user_id), str(username)))
                 conn.commit()
@@ -169,12 +138,7 @@ def set_req(user_id: int | str, username: str):
         else:
             LOGGER(__name__).error("Invalid database connection when trying to set PM request.")
 
-
 def get_req(user_id: int | str) -> str:
-    """
-    Retrieves the username of a user in the PM request list.
-    Returns the username (str) or an empty string if not found or DB unavailable.
-    """
     if not DB_AVAILABLE:
         LOGGER(__name__).warning("Database not available, cannot get PM request.")
         return ""
@@ -185,11 +149,10 @@ def get_req(user_id: int | str) -> str:
             cursor.execute("SELECT username FROM getpmapprove WHERE user_id = ?", (str(user_id),))
             row = cursor.fetchone()
             if row:
-                return row[0] # Return the username
+                return row[0]
             else:
-                return "" # Return empty string if not found
+                return ""
         except sqlite3.Error as e:
             LOGGER(__name__).error(f"Failed to get PM request for user {user_id}: {e}")
             return ""
-    return "" # Fallback if connection fails
-
+    return ""

@@ -1,11 +1,8 @@
 import sqlite3
 
-# Asumsikan ProjectMan.helpers.SQL sudah diinisialisasi dan menyediakan koneksi DB
-# dan LOGGER.
 from ProjectMan.helpers.SQL.__init__ import get_db_connection, DB_AVAILABLE, LOGGER
 
 def create_pmpermit_table():
-    """Membuat tabel 'pmpermit' jika belum ada."""
     if not DB_AVAILABLE:
         LOGGER(__name__).warning("Database tidak tersedia, tidak dapat membuat tabel 'pmpermit'.")
         return False
@@ -26,7 +23,6 @@ def create_pmpermit_table():
             return False
     return False
 
-# Panggil fungsi untuk membuat tabel pmpermit saat file ini dimuat
 if DB_AVAILABLE:
     create_pmpermit_table()
 else:
@@ -37,10 +33,6 @@ else:
 ## Fungsi Manajemen Izin PM
 
 def is_approved(chat_id: int | str) -> bool | None:
-    """
-    Memeriksa apakah chat_id diizinkan untuk PM.
-    Mengembalikan True jika diizinkan, False jika tidak, atau None jika ada error DB.
-    """
     if not DB_AVAILABLE:
         LOGGER(__name__).warning("Database tidak tersedia, tidak dapat memeriksa status izin PM.")
         return None
@@ -56,11 +48,7 @@ def is_approved(chat_id: int | str) -> bool | None:
             return None
     return None
 
-
 def approve(chat_id: int | str):
-    """
-    Mengizinkan chat_id untuk PM.
-    """
     if not DB_AVAILABLE:
         LOGGER(__name__).warning("Database tidak tersedia, tidak dapat mengizinkan PM.")
         return
@@ -68,7 +56,6 @@ def approve(chat_id: int | str):
     conn, cursor = get_db_connection()
     if conn and cursor:
         try:
-            # Menggunakan INSERT OR IGNORE untuk mencegah error jika chat_id sudah ada
             cursor.execute("INSERT OR IGNORE INTO pmpermit (chat_id) VALUES (?)", (str(chat_id),))
             conn.commit()
             LOGGER(__name__).info(f"Chat {chat_id} telah diizinkan untuk PM (jika belum).")
@@ -77,11 +64,7 @@ def approve(chat_id: int | str):
     else:
         LOGGER(__name__).error("Koneksi database tidak valid saat mencoba mengizinkan PM.")
 
-
 def dissprove(chat_id: int | str):
-    """
-    Tidak mengizinkan chat_id untuk PM.
-    """
     if not DB_AVAILABLE:
         LOGGER(__name__).warning("Database tidak tersedia, tidak dapat tidak mengizinkan PM.")
         return
@@ -90,7 +73,7 @@ def dissprove(chat_id: int | str):
     if conn and cursor:
         try:
             cursor.execute("DELETE FROM pmpermit WHERE chat_id = ?", (str(chat_id),))
-            if cursor.rowcount > 0: # Memeriksa apakah ada baris yang terpengaruh (dihapus)
+            if cursor.rowcount > 0:
                 conn.commit()
                 LOGGER(__name__).info(f"Chat {chat_id} telah tidak diizinkan untuk PM.")
             else:
