@@ -12,19 +12,13 @@ import asyncio
 
 from pyrogram import Client, enums, filters
 from pyrogram.types import Message
-# Asumsi IntegrityError tidak lagi dari SQLAlchemy, tetapi mungkin dari sqlite3 jika ada constraint,
-# atau bisa dihapus jika tidak ada penanganan khusus yang diperlukan untuk error tersebut di sini.
-# Untuk keamanan, kita biarkan saja atau ganti dengan Exception umum.
-# from sqlalchemy.exc import IntegrityError # Ini tidak diperlukan lagi
 
 from config import CMD_HANDLER as cmd
 from ProjectMan import TEMP_SETTINGS
 from ProjectMan.helpers.adminHelpers import DEVS
 from ProjectMan.helpers.basic import edit_or_reply
-# Mengimpor langsung fungsi dari modul globals yang sudah dimigrasi
-from ProjectMan.helpers.SQL.globals import addgvar, gvarstatus, delgvar # Tambahkan delgvar
-# Mengimpor langsung fungsi dari modul pm_permit_sql yang sudah dimigrasi
-from ProjectMan.helpers.SQL.pm_permit_sql import is_approved, approve, dissprove # Perbaiki dissprove ke disapprove jika itu namanya
+from ProjectMan.helpers.SQL.globals import addgvar, gvarstatus, delgvar
+from ProjectMan.helpers.SQL.pm_permit_sql import is_approved, approve, dissprove
 from ProjectMan.helpers.tools import get_arg
 
 from .help import add_command_help
@@ -46,47 +40,38 @@ DEF_UNAPPROVED_MSG = (
     ~filters.me & filters.private & ~filters.bot & filters.incoming, group=69
 )
 async def incomingpm(client: Client, message: Message):
-    # Tidak perlu lagi try-except untuk import di sini
-    # from ProjectMan.helpers.SQL.globals import gvarstatus # Sudah diimpor di atas
-    # from ProjectMan.helpers.SQL.pm_permit_sql import is_approved # Sudah diimpor di atas
-
-    # gvarstatus akan mengembalikan string "true" / "false" atau None
     pmpermit_status = gvarstatus("PMPERMIT")
     if pmpermit_status == "false":
         return
 
-    # auto_accept harus dipanggil dengan await
     if await auto_accept(client, message) or message.from_user.is_self:
         message.continue_propagation()
-        return # Penting: keluar setelah continue_propagation jika kondisi terpenuhi
+        return
 
     if message.chat.id != 777000:
-        # PM_LIMIT dari gvarstatus akan mengembalikan string atau None, konversi ke int
         pm_limit_str = gvarstatus("PM_LIMIT")
         PM_LIMIT = int(pm_limit_str) if pm_limit_str and pm_limit_str.isnumeric() else 5
 
         getmsg = gvarstatus("unapproved_msg")
         UNAPPROVED_MSG = getmsg if getmsg is not None else DEF_UNAPPROVED_MSG
 
-        # is_approved sekarang mengembalikan boolean atau None
         apprv = is_approved(message.chat.id)
         if not apprv and message.text != UNAPPROVED_MSG:
-            if message.chat.id not in TEMP_SETTINGS: # Pastikan kunci ada
-                TEMP_SETTINGS["PM_LAST_MSG"][message.chat.id] = "" # Inisialisasi
-                TEMP_SETTINGS["PM_COUNT"][message.chat.id] = 0 # Inisialisasi
+            if message.chat.id not in TEMP_SETTINGS:
+                TEMP_SETTINGS["PM_LAST_MSG"][message.chat.id] = ""
+                TEMP_SETTINGS["PM_COUNT"][message.chat.id] = 0
 
-            if TEMP_SETTINGS["PM_LAST_MSG"][message.chat.id] != message.text: # Hanya balas jika pesan berbeda
-                # Hapus pesan PMPERMIT sebelumnya dari bot jika ada
+            if TEMP_SETTINGS["PM_LAST_MSG"][message.chat.id] != message.text:
                 async for prev_bot_msg in client.search_messages(
                     message.chat.id,
                     from_user="me",
                     limit=10,
-                    query=UNAPPROVED_MSG, # Cari berdasarkan teks pesan
+                    query=UNAPPROVED_MSG,
                 ):
                     try:
                         await prev_bot_msg.delete()
                     except Exception:
-                        pass # Abaikan jika tidak bisa dihapus
+                        pass
 
                 if TEMP_SETTINGS["PM_COUNT"][message.chat.id] < (int(PM_LIMIT) - 1):
                     ret = await message.reply_text(UNAPPROVED_MSG)
@@ -95,12 +80,12 @@ async def incomingpm(client: Client, message: Message):
                 
                 TEMP_SETTINGS["PM_COUNT"][message.chat.id] += 1
             
-            if TEMP_SETTINGS["PM_COUNT"][message.chat.id] >= PM_LIMIT: # Gunakan >= PM_LIMIT
+            if TEMP_SETTINGS["PM_COUNT"][message.chat.id] >= PM_LIMIT:
                 await message.reply("**Maaf anda Telah Di Blokir Karna Spam Chat**")
                 try:
                     del TEMP_SETTINGS["PM_COUNT"][message.chat.id]
                     del TEMP_SETTINGS["PM_LAST_MSG"][message.chat.id]
-                except Exception: # Ganti BaseException dengan Exception
+                except Exception:
                     pass
 
                 await client.block_user(message.chat.id)
@@ -109,44 +94,37 @@ async def incomingpm(client: Client, message: Message):
 
 
 async def auto_accept(client: Client, message: Message):
-    # Tidak perlu lagi try-except untuk import di sini
-    # from ProjectMan.helpers.SQL.pm_permit_sql import approve, is_approved # Sudah diimpor di atas
-
     if message.chat.id in DEVS:
         try:
-            approve(message.chat.id) # Memanggil fungsi approve yang sudah dimigrasi
+            approve(message.chat.id)
             await client.send_message(
                 message.chat.id,
                 f"<b>Menerima Pesan!!!</b>\n{message.from_user.mention} <b>Terdeteksi Developer PyroMan-Userbot</b>",
                 parse_mode=enums.ParseMode.HTML,
             )
-            return True # Langsung return True karena sudah diapprove
-        except Exception as e: # Tangani exception umum jika IntegrityError tidak lagi relevan
-            # Log error jika ada masalah saat approve
+            return True
+        except Exception as e:
             LOGGER(__name__).error(f"Error in auto_accept for DEVS: {e}")
-            pass # Lanjutkan eksekusi meskipun approve gagal
+            pass
 
     if message.chat.id not in [client.me.id, 777000]:
-        if is_approved(message.chat.id): # Memanggil fungsi is_approved yang sudah dimigrasi
+        if is_approved(message.chat.id):
             return True
 
-        # Ambil pesan terbaru dari bot (self) di chat tersebut
         async for msg in client.get_chat_history(message.chat.id, limit=1):
             if msg.from_user.id == client.me.id:
                 try:
-                    # Inisialisasi PM_COUNT dan PM_LAST_MSG jika belum ada
                     if message.chat.id not in TEMP_SETTINGS:
                         TEMP_SETTINGS["PM_COUNT"][message.chat.id] = 0
                         TEMP_SETTINGS["PM_LAST_MSG"][message.chat.id] = ""
 
                     del TEMP_SETTINGS["PM_COUNT"][message.chat.id]
                     del TEMP_SETTINGS["PM_LAST_MSG"][message.chat.id]
-                except Exception: # Ganti BaseException dengan Exception
+                except Exception:
                     pass
 
                 try:
-                    approve(message.chat.id) # Memanggil fungsi approve yang sudah dimigrasi
-                    # Hapus pesan UNAPPROVED_MSG yang dikirim oleh bot
+                    approve(message.chat.id)
                     async for unapproved_msg_del in client.search_messages(
                         message.chat.id,
                         from_user="me",
@@ -156,10 +134,9 @@ async def auto_accept(client: Client, message: Message):
                         try:
                             await unapproved_msg_del.delete()
                         except Exception:
-                            pass # Abaikan jika tidak bisa dihapus
+                            pass
                     return True
-                except Exception as e: # Ganti BaseException dengan Exception
-                    # Log error jika ada masalah saat approve
+                except Exception as e:
                     LOGGER(__name__).error(f"Error in auto_accept after userbot reply: {e}")
                     pass
 
@@ -170,9 +147,6 @@ async def auto_accept(client: Client, message: Message):
     filters.command(["ok", "setuju", "approve"], cmd) & filters.me & filters.private
 )
 async def approvepm(client: Client, message: Message):
-    # Tidak perlu lagi try-except untuk import dan pengecekan "Non-SQL mode"
-    # from ProjectMan.helpers.SQL.pm_permit_sql import approve # Sudah diimpor di atas
-
     if message.reply_to_message:
         reply = message.reply_to_message
         replied_user = reply.from_user
@@ -193,26 +167,24 @@ async def approvepm(client: Client, message: Message):
         name0 = aname.first_name
 
     try:
-        approve(uid) # Memanggil fungsi approve yang sudah dimigrasi
+        approve(uid)
         await message.edit(f"**Menerima Pesan Dari** [{name0}](tg://user?id={uid})!")
-        # Reset PM_COUNT dan PM_LAST_MSG setelah disetujui secara manual
         if uid in TEMP_SETTINGS["PM_COUNT"]:
             del TEMP_SETTINGS["PM_COUNT"][uid]
         if uid in TEMP_SETTINGS["PM_LAST_MSG"]:
             del TEMP_SETTINGS["PM_LAST_MSG"][uid]
-        # Hapus pesan UNAPPROVED_MSG yang dikirim oleh bot
         async for unapproved_msg_del in client.search_messages(
             uid,
             from_user="me",
             limit=10,
-            query=UNAPPROVED_MSG, # Gunakan variabel UNAPPROVED_MSG global
+            query=UNAPPROVED_MSG,
         ):
             try:
                 await unapproved_msg_del.delete()
             except Exception:
                 pass
 
-    except Exception: # Mengganti IntegrityError dengan Exception, atau biarkan IntegrityError jika Anda ingin menangani spesifik
+    except Exception:
         await message.edit(
             f"[{name0}](tg://user?id={uid}) mungkin sudah disetujui untuk PM."
         )
@@ -223,9 +195,6 @@ async def approvepm(client: Client, message: Message):
     filters.command(["tolak", "nopm", "disapprove"], cmd) & filters.me & filters.private
 )
 async def disapprovepm(client: Client, message: Message):
-    # Tidak perlu lagi try-except untuk import dan pengecekan "Non-SQL mode"
-    # from ProjectMan.helpers.SQL.pm_permit_sql import dissprove # Sudah diimpor di atas
-
     if message.reply_to_message:
         reply = message.reply_to_message
         replied_user = reply.from_user
@@ -245,12 +214,11 @@ async def disapprovepm(client: Client, message: Message):
         uid = aname.id
         name0 = aname.first_name
 
-    dissprove(uid) # Memanggil fungsi dissprove yang sudah dimigrasi
+    dissprove(uid)
 
     await message.edit(
         f"**Pesan** [{name0}](tg://user?id={uid}) **Telah Ditolak, Mohon Jangan Melakukan Spam Chat!**"
     )
-    # Hapus juga dari TEMP_SETTINGS jika ada
     if uid in TEMP_SETTINGS["PM_COUNT"]:
         del TEMP_SETTINGS["PM_COUNT"][uid]
     if uid in TEMP_SETTINGS["PM_LAST_MSG"]:
@@ -259,17 +227,14 @@ async def disapprovepm(client: Client, message: Message):
 
 @Client.on_message(filters.command("pmlimit", cmd) & filters.me)
 async def setpm_limit(client: Client, cust_msg: Message):
-    # gvarstatus akan mengembalikan string "true" / "false" atau None
     pmpermit_status = gvarstatus("PMPERMIT")
     if pmpermit_status == "false":
         return await cust_msg.edit(
             f"**Anda Harus Menyetel Var** `PMPERMIT` **Ke** `True`\n\n**Bila ingin Mengaktifkan PMPERMIT Silahkan Ketik:** `{cmd}pmpermit on`"
         )
-    # Tidak perlu lagi try-except untuk import
-    # from ProjectMan.helpers.SQL.globals import addgvar # Sudah diimpor di atas
 
-    input_str = get_arg(cust_msg) # Gunakan get_arg untuk mendapatkan argumen dengan lebih bersih
-    
+    input_str = get_arg(cust_msg)
+   
     if not input_str:
         return await cust_msg.edit("**Harap masukan angka untuk PM_LIMIT.**")
     
@@ -278,7 +243,7 @@ async def setpm_limit(client: Client, cust_msg: Message):
     if not input_str.isnumeric():
         return await Man.edit("**Harap masukan angka untuk PM_LIMIT.**")
     
-    addgvar("PM_LIMIT", input_str) # Menggunakan fungsi addgvar yang sudah dimigrasi
+    addgvar("PM_LIMIT", input_str)
     await Man.edit(f"**Set PM limit to** `{input_str}`")
 
 
@@ -292,16 +257,14 @@ async def onoff_pmpermit(client: Client, message: Message):
     else:
         return await edit_or_reply(message, "**Gunakan: `.pmpermit on` atau `.pmpermit off`**")
 
-    # gvarstatus akan mengembalikan string "true" / "false" atau None
     current_pmpermit_status = gvarstatus("PMPERMIT")
-    PMPERMIT_IS_ON = (current_pmpermit_status != "false") # Dianggap aktif jika "true" atau None
-
-    if PMPERMIT_IS_ON and h_type: # Sedang ON dan ingin set ON
+    PMPERMIT_IS_ON = (current_pmpermit_status != "false")
+    if PMPERMIT_IS_ON and h_type:
         await edit_or_reply(message, "**PMPERMIT Sudah Diaktifkan**")
-    elif not PMPERMIT_IS_ON and not h_type: # Sedang OFF dan ingin set OFF
+    elif not PMPERMIT_IS_ON and not h_type:
         await edit_or_reply(message, "**PMPERMIT Sudah Dimatikan**")
-    else: # Perubahan status
-        addgvar("PMPERMIT", str(h_type).lower()) # Simpan sebagai "true" atau "false"
+    else:
+        addgvar("PMPERMIT", str(h_type).lower())
         if h_type:
             await edit_or_reply(message, "**PMPERMIT Berhasil Diaktifkan**")
         else:
@@ -310,15 +273,11 @@ async def onoff_pmpermit(client: Client, message: Message):
 
 @Client.on_message(filters.command("setpmpermit", cmd) & filters.me)
 async def setpmpermit(client: Client, cust_msg: Message):
-    """Set your own Unapproved message"""
-    # gvarstatus akan mengembalikan string "true" / "false" atau None
     pmpermit_status = gvarstatus("PMPERMIT")
     if pmpermit_status == "false":
         return await cust_msg.edit(
             f"**Anda Harus Menyetel Var** `PMPERMIT` **Ke** `True`\n\n**Bila ingin Mengaktifkan PMPERMIT Silahkan Ketik:** `{cmd}pmpermit on`"
         )
-    # Tidak perlu lagi try-except untuk import
-    # import ProjectMan.helpers.SQL.globals as sql # Sudah diimpor di atas (addgvar, gvarstatus, delgvar)
 
     Man = await cust_msg.edit("`Processing...`")
     
@@ -328,57 +287,46 @@ async def setpmpermit(client: Client, cust_msg: Message):
 
     msg_to_set = message.text or message.caption
     
-    # Hapus gvar "unapproved_msg" sebelum menambahkan yang baru jika sudah ada
-    # gvarstatus mengembalikan string atau None.
-    # delgvar hanya perlu dipanggil jika gvarstatus mengembalikan sesuatu (bukan None).
     if gvarstatus("unapproved_msg") is not None:
-        delgvar("unapproved_msg") # Menggunakan fungsi delgvar yang diimpor
+        delgvar("unapproved_msg")
 
-    addgvar("unapproved_msg", msg_to_set) # Menggunakan fungsi addgvar yang sudah dimigrasi
+    addgvar("unapproved_msg", msg_to_set)
     await Man.edit("**Pesan Berhasil Disimpan Ke Room Chat**")
 
 
 @Client.on_message(filters.command("getpmpermit", cmd) & filters.me)
 async def get_pmermit(client: Client, cust_msg: Message):
-    # gvarstatus akan mengembalikan string "true" / "false" atau None
     pmpermit_status = gvarstatus("PMPERMIT")
     if pmpermit_status == "false":
         return await cust_msg.edit(
             f"**Anda Harus Menyetel Var** `PMPERMIT` **Ke** `True`\n\n**Bila ingin Mengaktifkan PMPERMIT Silahkan Ketik:** `{cmd}pmpermit on`"
         )
-    # Tidak perlu lagi try-except untuk import
-    # import ProjectMan.helpers.SQL.globals as sql # Sudah diimpor di atas (addgvar, gvarstatus, delgvar)
-
     Man = await cust_msg.edit("`Processing...`")
-    custom_message = gvarstatus("unapproved_msg") # Menggunakan fungsi gvarstatus yang sudah dimigrasi
+    custom_message = gvarstatus("unapproved_msg")
 
     if custom_message is not None:
         await Man.edit(f"**Pesan PMPERMIT Yang Sekarang:**\n\n{custom_message}")
     else:
         await Man.edit(
             "**Anda Belum Menyetel Pesan Costum PMPERMIT,**\n"
-            f"**Masih Menggunakan Pesan PM Default:**\n\n`{DEF_UNAPPROVED_MSG}`" # Wrap default message in code block
+            f"**Masih Menggunakan Pesan PM Default:**\n\n`{DEF_UNAPPROVED_MSG}`"
         )
 
 
 @Client.on_message(filters.command("resetpmpermit", cmd) & filters.me)
 async def reset_pmpermit(client: Client, cust_msg: Message):
-    # gvarstatus akan mengembalikan string "true" / "false" atau None
     pmpermit_status = gvarstatus("PMPERMIT")
     if pmpermit_status == "false":
         return await cust_msg.edit(
             f"**Anda Harus Menyetel Var** `PMPERMIT` **Ke** `True`\n\n**Bila ingin Mengaktifkan PMPERMIT Silahkan Ketik:** `{cmd}pmpermit on`"
         )
-    # Tidak perlu lagi try-except untuk import
-    # import ProjectMan.helpers.SQL.globals as sql # Sudah diimpor di atas (addgvar, gvarstatus, delgvar)
-
     Man = await cust_msg.edit("`Processing...`")
-    custom_message = gvarstatus("unapproved_msg") # Menggunakan fungsi gvarstatus yang sudah dimigrasi
+    custom_message = gvarstatus("unapproved_msg")
 
     if custom_message is None:
         await Man.edit("**Pesan PMPERMIT Anda Sudah Default**")
     else:
-        delgvar("unapproved_msg") # Menggunakan fungsi delgvar yang diimpor
+        delgvar("unapproved_msg")
         await Man.edit("**Berhasil Mengubah Pesan Custom PMPERMIT menjadi Default**")
 
 
