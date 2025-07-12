@@ -1,0 +1,12 @@
+#!/bin/bash
+find . -type f -name "*.bak" -exec rm -f {} \;
+
+# Buat pesan commit otomatis
+DATE=$(date '+%Y-%m-%d %H:%M:%S')
+RANDOM_NUMBER=$RANDOM
+COMMIT_MESSAGE="Auto commit on $DATE #$RANDOM_NUMBER"
+
+# Jalankan perintah git
+git add .
+git commit -m "$COMMIT_MESSAGE"
+git push

@@ -39,7 +39,7 @@ async def main():
                 await bot.send_message(
                     BOTLOG_CHATID, MSG_ON.format(BOT_VER, CMD_HANDLER)
                 )
-            except BaseException:
+            except Exception: # Mengganti BaseException dengan Exception untuk penanganan error yang lebih spesifik
                 pass
             LOGGER("ProjectMan").info(
                 f"Logged in as {bot.me.first_name} | [ {bot.me.id} ]"
