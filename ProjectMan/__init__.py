@@ -1,12 +1,3 @@
-# Credits: @mrismanaziz
-# Copyright (C) 2022 Pyro-ManUserbot
-#
-# This file is a part of < https://github.com/mrismanaziz/PyroMan-Userbot/ >
-# PLease read the GNU Affero General Public License in
-# <https://www.github.com/mrismanaziz/PyroMan-Userbot/blob/main/LICENSE/>.
-#
-# t.me/SharingUserbot & t.me/Lunatic0de
-
 import asyncio
 import logging
 import sys
@@ -14,14 +5,9 @@ import time
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from typing import Any, Dict
-
-# from aiohttp import ClientSession
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from gpytranslate import Translator
 from pyrogram import Client
-# Menghapus impor GroupCallFactory dari pytgcalls
-# from pytgcalls import GroupCallFactory
-
 from config import (
     API_HASH,
     API_ID,
@@ -46,8 +32,6 @@ logging.basicConfig(
     ],
 )
 logging.getLogger("asyncio").setLevel(logging.CRITICAL)
-# Menghapus logging untuk pytgcalls
-# logging.getLogger("pytgcalls").setLevel(logging.WARNING)
 logging.getLogger("pyrogram").setLevel(logging.WARNING)
 logging.getLogger("pyrogram.client").setLevel(logging.WARNING)
 logging.getLogger("pyrogram.session.auth").setLevel(logging.CRITICAL)
@@ -86,8 +70,6 @@ else:
 LOOP = asyncio.get_event_loop()
 
 trl = Translator()
-
-# aiosession = ClientSession()
 
 CMD_HELP = {}
 
@@ -164,9 +146,3 @@ bot5 = (
 
 
 bots = [bot for bot in [bot1, bot2, bot3, bot4, bot5] if bot]
-
-# Menghapus bagian inisialisasi group_call
-# for bot in bots:
-#     if not hasattr(bot, "group_call"):
-#         setattr(bot, "group_call", GroupCallFactory(bot).get_group_call())
-

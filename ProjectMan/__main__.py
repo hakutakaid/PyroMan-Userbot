@@ -50,7 +50,6 @@ async def main():
     if bot1 and not str(BOTLOG_CHATID).startswith("-100"):
         await create_botlog(bot1)
     await idle()
-    await aiosession.close()
 
 
 if __name__ == "__main__":
